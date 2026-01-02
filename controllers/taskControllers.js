@@ -2,7 +2,9 @@ import Task from "../models/tasks.js";
 
 export const GET_ALL_TASKS = async (req, res) => {
   try {
-    let tasks = await Task.find({});
+    const userId = "6957efbaed8110f3a24f4b27";
+
+    let tasks = await Task.find({ userId });
     res.status(201).json({
       status: "success",
       data: { tasks },
@@ -15,7 +17,7 @@ export const GET_ALL_TASKS = async (req, res) => {
 
 export const CREATE_TASK = async (req, res) => {
   try {
-    const { title, status } = req.body;
+    const { title, status, userId } = req.body;
 
     if (!title) {
       console.log("No title");
@@ -37,6 +39,7 @@ export const CREATE_TASK = async (req, res) => {
     let task = new Task({
       title,
       status,
+      userId,
     });
 
     await task.save();
@@ -44,8 +47,53 @@ export const CREATE_TASK = async (req, res) => {
 
     res.status(201).json({
       status: "success",
-      data: task,
+      data: { task },
       message: `${task.title} added to list`,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ error: err });
+  }
+};
+export const UPDATE_TASK = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const { title, status } = req.body;
+    console.log(req.body);
+
+    if (!title && !status) {
+      console.log("Title and status missing");
+      return res
+        .status(400)
+        .json({ status: "fail", message: "Title and Status must be provided" });
+    }
+
+    let existingTask = await Task.findOne({ _id: id });
+
+    if (!existingTask) {
+      console.log("Task Doesn't exists");
+      return res.status(400).json({
+        status: "fail",
+        message: "Task Doesn't exists",
+      });
+    }
+    if (title && status) {
+      existingTask.title = title;
+      existingTask.status = status;
+    } else if (title) {
+      existingTask.title = title;
+    } else {
+      existingTask.status = status;
+    }
+
+    await existingTask.save();
+    console.log("task saved");
+
+    res.status(201).json({
+      status: "success",
+      data: existingTask,
+      message: `${existingTask.title} Updated`,
     });
   } catch (err) {
     console.log(err);
